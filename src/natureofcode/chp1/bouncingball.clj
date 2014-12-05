@@ -2,23 +2,11 @@
   (:require [quil.core :as q]
             [quil.middleware :as m]))
 
-(defn place-inbounds [[x y]]
-  [(if (> (q/width) x 0)
-     x
-     (q/width))
-   (if (> (q/height) y 0)
-     y
-     (q/height))])
-
-(defn check-inbounds [[vx vy]
-                      [x y]]
-  (println x "," y ":" vx "," vy)
-  [(if (>= (q/width) x 0)
-     vx
-     (- vx))
-   (if (>= (q/height) y 0)
-     vy
-     (- vy))])
+(defn check-inbounds [[x y]]
+  [(if (or (> x (q/width)) (< x 0))
+     -1 1)
+   (if (or (> y (q/height)) (< y 0))
+     -1 1)])
 
 (defn draw-ball [[x y]]
   (q/ellipse x y 16 16))
@@ -28,13 +16,14 @@
    :velocity [2.5 5]})
 
 (defn update [state]
-  (-> state
-      (update-in [:location] #(map + % (:velocity state)))
-      (update-in [:velocity] check-inbounds (:location state))
-      (update-in [:location] place-inbounds)))
+  (let [new-location (map + (:location state)
+                            (:velocity state))
+        new-velocity (map * (:velocity state)
+                            (check-inbounds new-location))]
+      {:location new-location
+       :velocity new-velocity}))
 
 (defn draw [state]
-  ;(println state)
   (q/background 255)
   (q/stroke 0)
   (q/fill 175)
